@@ -11,7 +11,8 @@ public class MyMultipart {
 
     BufferedReader br;
     String[] fileDataArr;
-    List<Map<String, String>> parts = new ArrayList<>();
+    List<Map<String, String>> fileInfoList = new ArrayList<>();
+    File file;
 
     // 파일을 읽고 바운더리를 기준 파일단위로 구분하여 map형태로 반환
     public void readFile(File file) {
@@ -86,28 +87,98 @@ public class MyMultipart {
                     key = pair[0].trim();
                     value = pair[1].trim();
                     map.put(key, value);
-                }
-                else{  // 파일섹션의 본문 담기
+                }else{  // 파일섹션의 본문 담기
                     capture = true;
                 }
                 if(capture){
                     fileContent += line+"\n";
                 }
             }
-            map.put("fileContent", fileContent);
+            map.put("fileContent", fileContent.trim());
             // map 데이터를 List 에 담아 관리하기 위함
-            parts.add(map);
+            fileInfoList.add(map);
         }
 
         // map 확인
-        for(int i=0;i<parts.size();i++){
+        for(int i = 0; i< fileInfoList.size(); i++){
             System.out.println("======== file "+(i+1)+" ==========");
-            System.out.println(parts.get(i));
+            System.out.println(fileInfoList.get(i));
             System.out.println("==========================");
         }
     }
 
     // 파일 name 을 매개변수로 해당하는 파일의 정보 가져오기
+    public Map<String, String> getMultipartFile(String fileName){
 
-    // 가져온 파일 정보를 토대로 로컬에 파일 저장 하기
+        List<Map<String, String>> findFileList = new ArrayList<>();
+
+        for(Map<String,String> fileInfo : fileInfoList){
+            // value 값이 있다면 List 에 추가
+            if(fileInfo.containsValue(fileName)){
+                findFileList.add(fileInfo);
+            }
+        }
+        // 찾은 fileInfo 가 2개 이상일때 예외 발생
+        try {
+            if(findFileList.size() > 1){
+                System.out.println("find file :: "+ findFileList.size());
+                throw new Exception("Too many file found ::::: "+ findFileList.size());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // 확인용
+//        for(Map<String,String> findFile : findFileList){
+//            System.out.println(findFile);
+//        }
+        return findFileList.get(0);
+    }
+
+    // 가져온 파일 정보를 바탕으로 로컬에 파일 저장 하기
+    public void saveFile(Map<String, String> fileInfo, String path){
+        file = new File(path);
+
+        String content = fileInfo.get("fileContent");
+
+        dirCheck(path);
+        duplicateFile(path);
+        try {
+            FileWriter writer = new FileWriter(path);
+            BufferedWriter bw = new BufferedWriter(writer);
+
+            writer.write(content);
+            writer.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 디렉토리 존재 여부 확인
+    public void dirCheck(String path){
+
+        file = new File(path);
+        File dir = file.getParentFile();
+        System.out.println("dir"+dir);
+
+        if(dir != null && !dir.exists()){
+            if(dir.mkdirs()){
+                System.out.println("디렉토리 생성 :: "+ dir);
+            }else{
+                System.out.println("디렉토리 생성 실패");
+            }
+        }
+    }
+
+    // 파일명이 중복 체크 및 처리
+    public void duplicateFile(String path){
+        boolean isDuplicateFile = file.exists();
+        System.out.println(isDuplicateFile);
+        if(isDuplicateFile) {
+            System.out.println("파일이 존재합니다. :: " + path);
+
+        }
+    }
+
+
 }
