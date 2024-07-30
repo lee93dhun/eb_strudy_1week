@@ -7,9 +7,9 @@ public class Main {
         String path = "E:\\ebrainstudy-template-week-1-main\\request-dummy.txt";
         File multipartData = new File(path);
 
-        Mymultipart mymultipart = new Mymultipart();
+        MyMultipart myMultipart = new MyMultipart();
 
-        mymultipart.readFile(multipartData);
-        // branch test
+        myMultipart.readFile(multipartData);
+
     }
 }

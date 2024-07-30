@@ -11,9 +11,13 @@ Content-Disposition: form-data; name=text1; filename=uploadFile1.txt
 Content-Type: application/octet-stream
 
 This is first file.
+Test text.
+
+Test text2.
 -------r1_eDOWu7FpA0LJdLwCMLJQapQGu
 Content-Disposition: form-data; name=text2; filename=uploadFile2.txt
 Content-Type: application/octet-stream
 
 This is second file.
+Test text.
 -------r1_eDOWu7FpA0LJdLwCMLJQapQGu--
