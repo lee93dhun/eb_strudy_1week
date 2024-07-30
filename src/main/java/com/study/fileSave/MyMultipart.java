@@ -100,29 +100,36 @@ public class MyMultipart {
         }
 
         // map 확인
-        for(int i = 0; i< fileInfoList.size(); i++){
-            System.out.println("======== file "+(i+1)+" ==========");
-            System.out.println(fileInfoList.get(i));
-            System.out.println("==========================");
-        }
+//        for(int i = 0; i< fileInfoList.size(); i++){
+//            System.out.println("======== file "+(i+1)+" ==========");
+//            System.out.println(fileInfoList.get(i));
+//            System.out.println("==========================");
+//        }
     }
+
+    // Todo
+    // 파일명을 못찾았을때 처리 방법
+    // 예외 처리시 에러 발생
+
 
     // 파일 name 을 매개변수로 해당하는 파일의 정보 가져오기
     public Map<String, String> getMultipartFile(String fileName){
 
         List<Map<String, String>> findFileList = new ArrayList<>();
 
-        for(Map<String,String> fileInfo : fileInfoList){
-            // value 값이 있다면 List 에 추가
-            if(fileInfo.containsValue(fileName)){
-                findFileList.add(fileInfo);
+            for(Map<String,String> fileInfo : fileInfoList){
+                // value 값이 있다면 List 에 추가
+                if(fileInfo.containsValue(fileName)) {
+                    findFileList.add(fileInfo);
+                }else{
+                    System.out.println("Not found file :::: fileName = " +fileName);
+                }
             }
-        }
-        // 찾은 fileInfo 가 2개 이상일때 예외 발생
+            // 찾은 fileInfo 가 2개 이상일때 예외 발생
         try {
-            if(findFileList.size() > 1){
-                System.out.println("find file :: "+ findFileList.size());
-                throw new Exception("Too many file found ::::: "+ findFileList.size());
+            if(findFileList.size() > 1) {
+                System.out.println("find file :: " + findFileList.size());
+                throw new RuntimeException("Too many file found ::::: " + findFileList.size());
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -137,15 +144,13 @@ public class MyMultipart {
 
     // 가져온 파일 정보를 바탕으로 로컬에 파일 저장 하기
     public void saveFile(Map<String, String> fileInfo, String path){
-        file = new File(path);
 
         String content = fileInfo.get("fileContent");
 
         dirCheck(path);
-        duplicateFile(path);
+        String duplicateFilePath = duplicateFile(path);
         try {
-            FileWriter writer = new FileWriter(path);
-            BufferedWriter bw = new BufferedWriter(writer);
+            FileWriter writer = new FileWriter(duplicateFilePath);
 
             writer.write(content);
             writer.flush();
@@ -171,14 +176,31 @@ public class MyMultipart {
     }
 
     // 파일명이 중복 체크 및 처리
-    public void duplicateFile(String path){
+    public String duplicateFile(String path){
+        String baseName = file.getName();
+        String dirPath = file.getParent();
         boolean isDuplicateFile = file.exists();
-        System.out.println(isDuplicateFile);
+
+        // 중복된 파일명이 있으면 변경
         if(isDuplicateFile) {
             System.out.println("파일이 존재합니다. :: " + path);
+            int cnt = 1;
+            int dotIdx = baseName.lastIndexOf(".");
+            String newFileName = "";
 
+            while(file.exists()){   // 파일이 중복되지 않을때까지 반복
+                String name = baseName.substring(0,dotIdx);
+                String extension = baseName.substring(dotIdx);
+                newFileName = name+"("+cnt+")"+extension;
+                System.out.println(newFileName);
+                file = new File(dirPath, newFileName);
+                cnt++;
+            }
+        }else{ // 없으면 경로 유지
+            System.out.println("중복된 파일명이 없습니다.");
+            return path;
         }
+        return file.getPath();
     }
-
 
 }
