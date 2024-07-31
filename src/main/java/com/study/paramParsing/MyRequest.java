@@ -23,8 +23,6 @@ public class MyRequest {
         String[] queries = strResult.split("&");
         System.out.println("queries.length = "+queries.length);
 
-
-
         for(String query : queries) {
             // key 와 value 분리
             String[] keyValue = query.split("=");

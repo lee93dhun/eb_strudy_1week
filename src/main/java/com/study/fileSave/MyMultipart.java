@@ -9,31 +9,35 @@ import java.util.Map;
 public class MyMultipart {
 
 
+
     BufferedReader br;
-    String[] fileDataArr;
+
     List<Map<String, String>> fileInfoList = new ArrayList<>();
     File file;
 
+    /**
+     * 파일을 읽어와 boundary 로 구분하여 Map 타입에 담아주는 기능
+     * @param mulitpartFile 읽어올 파일 경로를 가지고 있는 File 객체
+     *
+     */
     // 파일을 읽고 바운더리를 기준 파일단위로 구분하여 map형태로 반환
-    public void readFile(File file) {
+    public void readFile(File mulitpartFile) {
         String boundary = "";
         try {
-            FileReader fr = new FileReader(file);
+            FileReader fr = new FileReader(mulitpartFile);
             br = new BufferedReader(fr);
 
-            boolean capture = false;
+            boolean capture = false;    // 추출할 문자열을 구분하기 위한 스위치
             String fileData = "";
 
             while(true){
                 String line = br.readLine();
 
-                // boundary 추출
-                if(line.contains("boundary")){
+                if(line.contains("boundary")){      // boundary 추출
                     boundary = line.substring(line.indexOf("=")+1);
-                }else if(line.equals("--"+boundary+"--")){
+                }else if(line.equals("--"+boundary+"--")){        // 마지막 boundary, 추출 종료
                     break;
                 }
-                // boundary 를 기준으로 추출 스위치 작동
                 if(line.contains("--"+boundary)){
                     capture = true;
                 }
@@ -42,17 +46,15 @@ public class MyMultipart {
                 }
 
             }
-            // 처음 boundary 제거 , 필요 없는 문자 제거
+            // 첫번째 boundary 제거 , 불필요한 문자 제거 및 변환
             fileData = fileData
                     .replaceFirst("--"+boundary,"")
                     .replaceFirst("\n", "")
                     .replaceAll(";","\n")
                     .replaceAll("=",": ");
-            // boundary 기준으로 내용 분리
-            fileDataArr = fileData.split("--"+boundary);
-
-            // Map형태의 List에 담기
-            transDataParts();
+            // boundary 를 기준, 파일 내용별로 배열에 담기
+            String[] fileDataArr = fileData.split("--"+boundary);
+            transDataParts(fileDataArr);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -60,34 +62,37 @@ public class MyMultipart {
 
     }
 
+    /**
+     * 파일의 내용을 Map 타입 객체에 담아 List 로 관리하게 함.
+     * @param fileDataArr 파일 정보 별로 구분해 놓은 배열
+     * @throws IOException 파일의 내용을 읽어오는 중에 발생할 수 있는 예외
+     */
     // 데이터 key value 형태로 변화하여 리스트에 담기
-    public void transDataParts() throws IOException {
+    public void transDataParts(String[] fileDataArr) throws IOException {
         Map<String, String> map ;
 
-        // 파일데이터의 개수만큼 반복
         for(String fileData : fileDataArr){
             br = new BufferedReader(new StringReader(fileData.trim()));
             map = new HashMap<>();
-            String fileContent = "";
+            String fileContent = "";    // 각 파일 데이터의 내용을 담을 변수
             // 한 줄씩 읽어와 map에 담기
             while(true){
                 String key;
                 String value;
+                boolean capture = false;    // 추출할 파일내용임을 구분하기 위한 스위치
 
-                boolean capture = false;
                 String line = br.readLine();
                 if(line == null) {
                     break;
                 }
-//                System.out.println("start --- "+line);
 
-                // 파일 섹션의 헤더 담기
+                // ':' 로 헤더임을 구분하여 map 에 담기
                 if(line.contains(":")){
                     String[] pair = line.split(": ");
                     key = pair[0].trim();
                     value = pair[1].trim();
                     map.put(key, value);
-                }else{  // 파일섹션의 본문 담기
+                }else{
                     capture = true;
                 }
                 if(capture){
@@ -99,20 +104,18 @@ public class MyMultipart {
             fileInfoList.add(map);
         }
 
-        // map 확인
-//        for(int i = 0; i< fileInfoList.size(); i++){
-//            System.out.println("======== file "+(i+1)+" ==========");
-//            System.out.println(fileInfoList.get(i));
-//            System.out.println("==========================");
-//        }
     }
 
-    // Todo
-    // 파일명을 못찾았을때 처리 방법
-    // 예외 처리시 에러 발생
+    // Todo 예외처리시 catch 처리 ?
 
-
-    // 파일 name 을 매개변수로 해당하는 파일의 정보 가져오기
+    /**
+     * fileName 값을 value 로 가지고 있는 Map 객체 반환하기
+     *
+     * @param fileName 가져올 name 속성의 값
+     * @return 'fileName' 을 통해 찾은 Map 객체 한 개만을 반환
+     * @throws 'Map' 타입 'fileInfo' 의 value == fileName 가 2개 이상 경우
+     *          fileInfo 의 value 에 fileName 값이 없는경우
+     */
     public Map<String, String> getMultipartFile(String fileName){
 
         List<Map<String, String>> findFileList = new ArrayList<>();
@@ -122,27 +125,33 @@ public class MyMultipart {
                 if(fileInfo.containsValue(fileName)) {
                     findFileList.add(fileInfo);
                 }else{
-                    System.out.println("Not found file :::: fileName = " +fileName);
+                    try {
+                        throw new Exception("Not found file :::: fileName = "+fileName);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        throw new RuntimeException(e);
+                    }
                 }
             }
-            // 찾은 fileInfo 가 2개 이상일때 예외 발생
-        try {
-            if(findFileList.size() > 1) {
-                System.out.println("find file :: " + findFileList.size());
-                throw new RuntimeException("Too many file found ::::: " + findFileList.size());
+            try {
+                if(findFileList.size() > 1) {
+                    System.out.println("find file :: " + findFileList.size());
+                    throw new RuntimeException("Too many file found ::::: " + findFileList.size());
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new RuntimeException(e);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
 
-        // 확인용
-//        for(Map<String,String> findFile : findFileList){
-//            System.out.println(findFile);
-//        }
         return findFileList.get(0);
     }
 
-    // 가져온 파일 정보를 바탕으로 로컬에 파일 저장 하기
+    /**
+     * 파일을 로컬에 저장하는 기능
+     *
+     * @param fileInfo 저장할 파일의 정보를 담고 있는 객체
+     * @param path 파일을 저장할 경로
+     */
     public void saveFile(Map<String, String> fileInfo, String path){
 
         String content = fileInfo.get("fileContent");
@@ -159,12 +168,15 @@ public class MyMultipart {
         }
     }
 
-    // 디렉토리 존재 여부 확인
+    /**
+     * 저장할 경로에 디렉토리 존재 여부 체크 후 생성
+     *
+     * @param path 파일을 저장할 경로
+     */
     public void dirCheck(String path){
 
         file = new File(path);
         File dir = file.getParentFile();
-        System.out.println("dir"+dir);
 
         if(dir != null && !dir.exists()){
             if(dir.mkdirs()){
@@ -175,11 +187,17 @@ public class MyMultipart {
         }
     }
 
+    /**
+     * 경로에 파일명 중복이 있는지 체크 후 파일명 변경후 저장
+     *
+     * @param path 저장할 파일의 경로
+     * @return 변경한 파일명이 포함된 경로
+     */
     // 파일명이 중복 체크 및 처리
     public String duplicateFile(String path){
-        String baseName = file.getName();
+        String baseName = file.getName();   // 기존의 파일명
         String dirPath = file.getParent();
-        boolean isDuplicateFile = file.exists();
+        boolean isDuplicateFile = file.exists();    // 파일이 존재? true : false
 
         // 중복된 파일명이 있으면 변경
         if(isDuplicateFile) {
@@ -188,15 +206,16 @@ public class MyMultipart {
             int dotIdx = baseName.lastIndexOf(".");
             String newFileName = "";
 
-            while(file.exists()){   // 파일이 중복되지 않을때까지 반복
+            // 파일명과 확장자를 분리해 파일명 수정후 결합
+            while(file.exists()){
                 String name = baseName.substring(0,dotIdx);
                 String extension = baseName.substring(dotIdx);
+
                 newFileName = name+"("+cnt+")"+extension;
-                System.out.println(newFileName);
                 file = new File(dirPath, newFileName);
                 cnt++;
             }
-        }else{ // 없으면 경로 유지
+        }else{ // 중복된 파일 없으면 경로 유지
             System.out.println("중복된 파일명이 없습니다.");
             return path;
         }
