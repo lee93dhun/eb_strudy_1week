@@ -24,8 +24,17 @@ tasks.withType(JavaCompile) {
 dependencies {
     compileOnly('jakarta.servlet:jakarta.servlet-api:6.0.0')
 
+    // MyBatis dependencies
+    implementation 'org.mybatis:mybatis:3.5.7'
+    implementation 'org.mybatis:mybatis-spring:2.0.7'
+    // Log4j 2 의존성 추가
+    implementation 'org.apache.logging.log4j:log4j-core:2.20.0'
+    implementation 'org.apache.logging.log4j:log4j-api:2.20.0'
+    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.20.0'
+
     testImplementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")
+
     implementation group: 'mysql', name: 'mysql-connector-java', version: '8.0.28'
 
     // J unit5
