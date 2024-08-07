@@ -1,0 +1,22 @@
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jspBoard.dao.PostDao">
+    <select id="getAllPostOrderByRecent" resultType="com.jspBoard.entity.PostEntity">
+        SELECT
+            post_id AS postId,
+            post_writer AS postWriter,
+            post_title AS postTitle,
+            post_content AS postContent,
+            category_id AS categoryId,
+            hits AS postHits,
+            upload_datetime AS uploadDatetime,
+            update_datetime AS updateDatetime
+        FROM post
+        ORDER BY uploadDatetime DESC ;
+    </select>
+    
+    <select id="categoryById" parameterType="Integer" resultType="String">
+        SELECT category_name FROM category WHERE category_id = #{categoryId}
+    </select>
+</mapper>

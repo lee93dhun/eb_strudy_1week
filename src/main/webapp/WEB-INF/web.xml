@@ -4,13 +4,13 @@
          xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_5_0.xsd"
          version="5.0">
 
-    <servlet>
-        <servlet-name>boardServlet</servlet-name>
-        <servlet-class>com.jspBoard.boardController.BoardController</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>boardServlet</servlet-name>
-        <url-pattern>/list</url-pattern>
-    </servlet-mapping>
+<!--    <servlet>-->
+<!--        <servlet-name>boardServlet</servlet-name>-->
+<!--        <servlet-class>com.jspBoard.controller.BoardController</servlet-class>-->
+<!--    </servlet>-->
+<!--    <servlet-mapping>-->
+<!--        <servlet-name>boardServlet</servlet-name>-->
+<!--        <url-pattern>/</url-pattern>-->
+<!--    </servlet-mapping>-->
 
 </web-app>
