@@ -13,4 +13,8 @@ public interface PostDao {
     String categoryById(int id);
 
     int getAllPostCnt();
+
+    ArrayList<Map<String, Object>> getAllCategories();
+
+    ArrayList<PostEntity> getBoardListByParams(Map<String, Object> searchParam);
 }

@@ -7,22 +7,61 @@
         SELECT COUNT(post_id) FROM post;
     </select>
 
-    <select id="getPostOrderByRecent" parameterType="Map" resultType="com.jspBoard.entity.PostEntity">
+<!--    <select id="getPostOrderByRecent" parameterType="Map" resultType="com.jspBoard.entity.PostEntity">-->
+<!--        SELECT-->
+<!--            post_id AS postId,-->
+<!--            post_writer AS postWriter,-->
+<!--            post_title AS postTitle,-->
+<!--            post_content AS postContent,-->
+<!--            category_id AS categoryId,-->
+<!--            hits AS postHits,-->
+<!--            upload_datetime AS uploadDatetime,-->
+<!--            update_datetime AS updateDatetime-->
+<!--        FROM post-->
+<!--        ORDER BY uploadDatetime DESC-->
+<!--        LIMIT #{offset}, #{boardPerPage} ;-->
+<!--    </select>-->
+
+    <select id="getBoardListByParams" parameterType="Map" resultType="com.jspBoard.entity.PostEntity">
         SELECT
-            post_id AS postId,
-            post_writer AS postWriter,
-            post_title AS postTitle,
-            post_content AS postContent,
+            p.post_id AS postId,
+            p.post_writer AS postWriter,
+            p.post_title AS postTitle,
+            p.post_content AS postContent,
+            c.category_id AS categoryId,
+            p.hits AS postHits,
+            p.upload_datetime AS uploadDatetime,
+            p.update_datetime AS updateDatetime
+        FROM post p JOIN category c ON c.category_id = p.category_id
+        <where>
+            <if test="categoryId != null">
+                AND c.category_id = #{categoryId}
+            </if>
+            <if test="keyword != null">
+                AND (
+                p.post_title LIKE CONCAT('%', #{keyword}, '%') OR
+                p.post_writer LIKE CONCAT('%', #{keyword}, '%') OR
+                p.post_content LIKE CONCAT('%', #{keyword}, '%')
+                )
+            </if>
+            <if test="startDate != null and endDate != null">
+                AND DATE(p.upload_datetime) BETWEEN DATE(#{startDate}) AND DATE(#{endDate})
+            </if>
+        </where>
+        ORDER BY p.upload_datetime DESC
+            LIMIT #{offset}, #{boardPerPage} ;
+    </select>
+    
+    <select id="getAllCategories" resultType="Map">
+        SELECT
             category_id AS categoryId,
-            hits AS postHits,
-            upload_datetime AS uploadDatetime,
-            update_datetime AS updateDatetime
-        FROM post
-        ORDER BY uploadDatetime DESC
-        LIMIT #{offset}, #{postsPerPage} ;
+            category_name AS categoryName
+        FROM category ORDER BY category_name ASC;
     </select>
     
     <select id="categoryById" parameterType="Integer" resultType="String">
         SELECT category_name FROM category WHERE category_id = #{categoryId}
     </select>
+
+
 </mapper>
