@@ -123,10 +123,11 @@
                 </c:when>
                 <c:otherwise>
                     <c:forEach var="post" items="${boardList}">
+<%--                        <input type="hidden" value="${post.postId}"/>--%>
                         <tr>
                             <td>${post.categoryName}</td>
                             <td>X</td> <!-- 파일 첨부가 없으므로 X로 처리 -->
-                            <td>${post.postTitle}</td>
+                            <td><a href="board/detail?idx=${post.postId}">${post.postTitle}</a></td>
                             <td>${post.postWriter}</td>
                             <td>${post.postHits}</td>
                             <td>${post.uploadDatetime}</td>
@@ -168,6 +169,7 @@
 </div>
 </body>
 <script>
+
     // 검색된 조건 submit
     document.querySelector(".search-box").addEventListener("submit", event => {
         event.preventDefault();  // 기본 submit 효과 X
@@ -203,5 +205,6 @@
                 console.error('Error:', error);
             });
     });
+
 </script>
 </html>

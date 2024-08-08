@@ -33,7 +33,9 @@ public class BoardController extends HttpServlet {
             String resource = "mybatis-config.xml";
             sqlSessionFactory = new SqlSessionFactoryBuilder()
                     .build(Resources.getResourceAsStream(resource));
+
             commandMap.put("GET:/list", new ListService(sqlSessionFactory));
+
         } catch (IOException e) {
             logger.error("SqlSessionFactory Build  실패");
             throw new ServletException("Failed to initialize SqlSessionFactory", e);
@@ -60,8 +62,8 @@ public class BoardController extends HttpServlet {
             throws ServletException, IOException {
         HttpService targetService = findTargetService(req);
         String view = targetService.doService(req, resp);
+        logger.info("view = {}",view);
         req.getRequestDispatcher(view).forward(req, resp);
-        resp.sendRedirect(view);
     }
 
     private HttpService findTargetService(HttpServletRequest req) {
@@ -72,12 +74,6 @@ public class BoardController extends HttpServlet {
 
         logger.info("path = {}",path);
         String key = method + ":" + path;
-        // 확인후 제거
-//        String params = req.getQueryString();
-//        logger.info("params = {}" , params);
-//        if(params != null) {
-//            key += "?"+params;
-//        }
         logger.info("key: {}", key);
         return commandMap.get(key);
     }
