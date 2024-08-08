@@ -1,3 +1,4 @@
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page import="com.jspBoard.entity.PostEntity" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %><%--
@@ -16,12 +17,12 @@
             width: 1100px;
             margin: 0 auto;
         }
-        .top-box{
+        .search-box{
             border: 1px solid #000;
             padding: 5px 10px;
             display: flex;
         }
-        .top-box input[type="text"]{
+        .search-box input[type="text"]{
             width: 300px;
         }
         .board-box{
@@ -63,33 +64,27 @@
     </style>
 </head>
 <body>
-    <%
-        List<PostEntity> postList = (List<PostEntity>) request.getAttribute("postList");
-        int maxPage = (Integer) request.getAttribute("maxPage");
-        int findPostCnt = (Integer) request.getAttribute("allPostCnt");
-        int currentPageIdx = (Integer) request.getAttribute("currentPageIdx");
-//        int postsPerPage = (Integer) request.getAttribute("postsPerPage");
-
-    %>
     <div class="container">
         <h2>자유 게시판 - 목록</h2>
-        <div class="top-box">
+        <form class="search-box" action="list" method="get">
             <label>등록일</label>
             <div>
-                <input type="date" /> ~ <input type="date">
+                <input type="date" id="startDate" name="startDate" value="${param.startDate}"/> ~
+                <input type="date" id="endDate" name="endDate" value="${param.endDate}">
             </div>
             <div>
-                <select>
+                <select id="category" name="category">
                     <option>전체 카테고리</option>
                     <option>test1</option>
                     <option>test2</option>
                 </select>
-                <input type="text" placeholder="검색어를 입력해 주세요. (제목 + 작성자 + 내용)"/>
-                <button>검색</button>
+                <input type="text" id="keyword" name="keyword" value="${param.keyword}"
+                       placeholder="검색어를 입력해 주세요. (제목 + 작성자 + 내용)"/>
+                <button type="submit">검색</button>
             </div>
-        </div>
+        </form>
         <div class="board-box">
-            <p>총 <%=findPostCnt%> 건</p>
+            <p>총 ${allPostCnt} 건</p>
             <table>
                 <colgroup>
                     <col style="width: 170px">
@@ -109,71 +104,59 @@
                     <th>등록일자</th>
                     <th>수정일자</th>
                 </tr>
-                <%
-                    if(postList == null  ||  postList.size() == 0){
-                %>
-                    <tr>
-                        <td colspan="7">
-                            <p>게시글이 없습니다.</p>
-                        </td>
-                    </tr>
-                <%
-                    }else{
-                        for(int i=0; i<postList.size(); i++){
-                            PostEntity post = postList.get(i);
-                %>
+                <c:choose>
+                    <c:when test="${empty postList}">
                         <tr>
-                            <td><%= post.getCategoryName() %></td>
-                            <td>X</td>  <!-- 출력 = null -->
-                            <td><%= post.getPostTitle() %></td>
-                            <td><%= post.getPostWriter()%></td>
-                            <td><%= post.getPostHits() %></td>
-                            <td><%= post.getUploadDatetime() %></td>
-                            <td><%= post.getUpdateDatetime() %></td>
+                            <td colspan="7">
+                                <p>게시글이 없습니다.</p>
+                            </td>
                         </tr>
-                <%
-                        }
-                    }
-                %>
+                    </c:when>
+                    <c:otherwise>
+                        <c:forEach var="post" items="${postList}">
+                            <tr>
+                                <td>${post.categoryName}</td>
+                                <td>X</td> <!-- 파일 첨부가 없으므로 X로 처리 -->
+                                <td>${post.postTitle}</td>
+                                <td>${post.postWriter}</td>
+                                <td>${post.postHits}</td>
+                                <td>${post.uploadDatetime}</td>
+                                <td>${post.updateDatetime}</td>
+                            </tr>
+                        </c:forEach>
+                    </c:otherwise>
+                </c:choose>
             </table>
             <div class="pageSection">
-                <div class="prev">
-                    <button onclick="window.location.href='list?page=<%= currentPageIdx-1%>'"
-                            <%= currentPageIdx == 1 ? "disabled":"" %> >◀</button>
+                <div class="next">
+                    <button onclick="window.location.href='list?page=${ currentPageIdx-1}'"
+                    ${currentPageIdx == 1 ? "disabled":"" } > ◀ </button>
                 </div>
                 <ul class="pagination">
-                <%
-                    if(maxPage == 0){
-                %>
-                        <li><a class="page-num active" href="list?page=1"> 1 </a></li>
-                <%
-                    }else {
-                        for(int i=0; i<maxPage; i++){
-                            int pageIdx = i+1;
-                            String activeCls = (currentPageIdx == pageIdx) ? "active" : "";
-                %>
-                        <li><a class="page-num <%=activeCls%>"
-                               href="list?page=<%= pageIdx %>"> <%= pageIdx %>
-                        </a></li>
-                <%
-                       }
-                    }
-                %>
+                    <c:choose>
+                        <c:when test="${maxPage == 0}">
+                            <li><a class="page-num active" href="list?page=1">1</a></li>
+                        </c:when>
+                        <c:otherwise>
+                            <c:forEach var="i" begin="0" end="${maxPage - 1}">
+                                <c:set var="pageIdx" value="${i + 1}" />
+                                <c:set var="activeCls" value="${currentPageIdx == pageIdx ? 'active' : ''}" />
+                                <li><a class="page-num ${activeCls}"
+                                       href="list?page=${pageIdx}"> ${pageIdx}
+                                </a></li>
+                            </c:forEach>
+                        </c:otherwise>
+                    </c:choose>
                 </ul>
                 <div class="next">
-                    <button onclick="window.location.href='list?page=<%= currentPageIdx+1%>'"
-                            <%= currentPageIdx == maxPage ? "disabled":"" %> > ▶ </button>
+                    <button onclick="window.location.href='list?page=${ currentPageIdx+1}'"
+                            ${currentPageIdx == maxPage ? "disabled":"" } > ▶ </button>
                 </div>
             </div>
         </div>
     </div>
 </body>
 <script>
-    let navigatePage = (pageNum) =>{
-        let maxPage = <%= maxPage %>;
-        if(pageNum < 1 || pageNum > maxPage){
-            alert('')
-        }
-    }
+
 </script>
 </html>
