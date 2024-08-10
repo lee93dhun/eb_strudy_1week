@@ -1,5 +1,6 @@
 package com.jspBoard.controller;
 
+import com.jspBoard.service.DetailService;
 import com.jspBoard.service.HttpService;
 import com.jspBoard.service.ListService;
 import jakarta.servlet.ServletConfig;
@@ -35,6 +36,7 @@ public class BoardController extends HttpServlet {
                     .build(Resources.getResourceAsStream(resource));
 
             commandMap.put("GET:/list", new ListService(sqlSessionFactory));
+            commandMap.put("GET:/detail", new DetailService());
 
         } catch (IOException e) {
             logger.error("SqlSessionFactory Build  실패");
@@ -50,9 +52,8 @@ public class BoardController extends HttpServlet {
 
             logger.info(" ::: uri = {}",uri);
         if ("/".equals(uri) || "/board/".equals(uri)) {
-            logger.info("uri 변환 코드 실행");
+            logger.info("uri 변환 실행");
             resp.sendRedirect(req.getContextPath() + "/list");
-            logger.info(" ::: SEND REDIRECT ::::");
             return;
         }
         executeService(req, resp);

@@ -6,7 +6,9 @@
     </settings>
 
     <typeAliases>
-        <typeAlias alias="postEntity" type="com.jspBoard.entity.PostEntity"/>
+        <typeAlias alias="CategoryEntity" type="com.jspBoard.entity.CategoryEntity"/>
+        <typeAlias alias="BoardListParamDto" type="com.jspBoard.dto.BoardListParamDto"/>
+        <typeAlias alias="BoardListDto" type="com.jspBoard.dto.BoardListDto"/>
     </typeAliases>
 
     <environments default="development">

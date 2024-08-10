@@ -2,7 +2,10 @@ package com.jspBoard.service;
 
 
 import com.jspBoard.dao.PostDao;
-import com.jspBoard.entity.PostEntity;
+import com.jspBoard.dto.BoardListDto;
+import com.jspBoard.dto.BoardListParamDto;
+import com.jspBoard.dto.CategoryDto;
+import com.jspBoard.entity.CategoryEntity;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -11,12 +14,11 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 public class ListService implements HttpService {
-
     private final Logger logger = LogManager.getLogger(this.getClass());
     private SqlSessionFactory sqlSessionFactory;
 
@@ -25,124 +27,140 @@ public class ListService implements HttpService {
     }
 
     @Override
-    public String doService(HttpServletRequest req, HttpServletResponse resp) throws ServletException {
+    public String doService(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String view = "/WEB-INF/views/list.jsp";
 
-        SqlSession sqlSession = sqlSessionFactory.openSession();
-        PostDao postDao = sqlSession.getMapper(PostDao.class);
+        try(SqlSession sqlSession = sqlSessionFactory.openSession()) {
+            PostDao postDao = sqlSession.getMapper(PostDao.class);
 
-        String page = "/WEB-INF/views/list.jsp";
-        int boardPerPage = 5;  //  한 페이지에 볼 게시물 수
-        int allPostCnt = postDao.getAllPostCnt();
-        int maxPage = getMaxPage(allPostCnt, boardPerPage);
-        int currentPageIdx = getPageNum(req, maxPage);
-        int offset = (currentPageIdx - 1) * boardPerPage;
+            List<CategoryDto> categoryDtoList = getCategoryDtoList(postDao);
 
-        Map<String, Integer> pageParam = new HashMap<>();
-        pageParam.put("offset", offset);
-        pageParam.put("boardPerPage", boardPerPage);
+            int pageSize = 5;
+            String pageParam = req.getParameter("page");
+            int currentPage = getCurrentPage(pageParam);
+            int offset = (currentPage - 1) * pageSize;
 
-        ArrayList<Map<String, Object>> allCategories = getAllCategories(postDao);
-        ArrayList<PostEntity> boardList = getBoardList(req, postDao, pageParam);
+            // TODO 검색 조건이되는 파라미터들을 uriResult() 메서드 에서도 사용하는데 Map 으로 묶어서 전달 ?
+            BoardListParamDto boardListParamDto =
+                    createBoardListParamDto(req, offset, pageSize);
 
-        req.setAttribute("allCategories", allCategories);
-        req.setAttribute("allPostCnt", allPostCnt);
-        req.setAttribute("boardList", boardList);
-        req.setAttribute("maxPage", maxPage);
-        req.setAttribute("boardPerPage", boardPerPage);
-        req.setAttribute("currentPageIdx", currentPageIdx);
+            int postCount = postDao.getPostCount(boardListParamDto);
+            int totalPage = getTotalPage(postCount, pageSize);
 
-        logger.info(boardList.size());
-        return page;
+            List<BoardListDto> boardList = getBoardList(postDao, boardListParamDto);
+
+            String reqUri = req.getRequestURI();
+            String uriResult = buildUri(reqUri, boardListParamDto);
+
+            // view 로 전송
+            req.setAttribute("uriResult", uriResult);
+            req.setAttribute("categoryList", categoryDtoList);
+            req.setAttribute("searchParam", boardListParamDto);
+            req.setAttribute("postCount", postCount);
+            req.setAttribute("boardList", boardList);
+            req.setAttribute("totalPage", totalPage);
+            req.setAttribute("pageSize", pageSize);
+            req.setAttribute("currentPage", currentPage);
+            return view;
+        }
     }
 
-    public ArrayList<Map<String, Object>> getAllCategories(PostDao postDao) {
-        ArrayList<Map<String, Object>> allCategories = postDao.getAllCategories();
-        return allCategories;
+    // 전체 카테고리 가져오기
+    public List<CategoryDto> getCategoryDtoList(PostDao postDao) {
+        List<CategoryDto> categoryDtoList = new ArrayList<CategoryDto>();
+        List<CategoryEntity> allCategory = postDao.getCategoryDtoList();
+
+        // CategoryEntity -> CategoryDto
+        for(CategoryEntity category : allCategory) {
+            CategoryDto categoryDto = new CategoryDto();
+            categoryDto.setCategoryId(category.getCategoryId());
+            categoryDto.setCategoryName(category.getCategoryName());
+            categoryDtoList.add(categoryDto);
+        }
+        return categoryDtoList;
     }
 
-    // 게시물 가져오기  -> 기본 || 검색조건
-    public ArrayList<PostEntity> getBoardList(
-            HttpServletRequest req, PostDao postDao, Map<String, Integer> pageParam) {
+    // Todo page 값에 대한 유효성 검사 ?
+    private int getCurrentPage(String pageParam) {
+        int currentPage =
+                pageParam != null && pageParam != "" ? Integer.parseInt(pageParam) : 1;
+        return currentPage;
+    }
+
+    private BoardListParamDto createBoardListParamDto(HttpServletRequest req, int offset, int pageSize) {
         String startDate = req.getParameter("startDate");
         String endDate = req.getParameter("endDate");
         String keyword = req.getParameter("keyword");
-        String categoryParam = req.getParameter("category");
-        Integer categoryId;
+        String categoryIdStr = req.getParameter("category");
+        Integer categoryId = getCategoryId(categoryIdStr);
 
-        if (categoryParam != null) {
-            categoryId = Integer.parseInt(categoryParam);
-        } else {
+        BoardListParamDto boardListParamDto = new BoardListParamDto();
+        boardListParamDto.setStartDate(startDate);
+        boardListParamDto.setEndDate(endDate);
+        boardListParamDto.setKeyword(keyword);
+        boardListParamDto.setCategoryId(categoryId);
+        boardListParamDto.setOffset(offset);
+        boardListParamDto.setPageSize(pageSize);
+        return boardListParamDto;
+    }
+
+    // Todo 일치하는 categoryId가 없을때 처리 하기 (형태, 범위 )
+    private Integer getCategoryId(String categoryParam) {
+        Integer categoryId;
+        try {
+            categoryId = categoryParam == null ? null : Integer.parseInt(categoryParam);
+        } catch (NumberFormatException e) {
+            logger.info(" :: NumberFormatException occurs in categoryParam, converting to null :: ");
             categoryId = null;
         }
+        return categoryId;
+    }
 
-        Map<String, Object> searchParam = new HashMap<>();
-        searchParam.put("startDate", startDate);
-        searchParam.put("endDate", endDate);
-        searchParam.put("categoryId", categoryId);
-        searchParam.put("keyword", keyword);
+    public int getTotalPage(int postCount, int pageSize) {
+        int totalPage = 0;
 
-//        boolean allParamsNull = searchParam.values().stream().allMatch(value -> value == null);
-//        ArrayList<PostEntity> getPostList;
+        totalPage = postCount / pageSize;
+        if (postCount % pageSize != 0) {
+            totalPage++;
+        }
+        return totalPage;
+    }
 
-      /*  if (allParamsNull) {
-            logger.info("모든게시물 가져오기 수행"); 
-            getPostList = postDao.getPostOrderByRecent(pageParma);
-        } else {
-            logger.info("조건에 맞는 게시물 가져오기 수행");
-            // pageParam , searchParam 묶어주기
-//            Map<String,Object> searchPageParam = new HashMap<>(searchParam);
-            searchParam.putAll(pageParma);
-            // 검색조건과 페이징으로 게시물 가져오기
-            getPostList = postDao.getBoardListByParams(searchParam);
-        }*/
-        searchParam.putAll(pageParam);
-        ArrayList<PostEntity> boardList = postDao.getBoardListByParams(searchParam);
-        for (PostEntity post : boardList) {
+    // 게시물 가져오기  -> 기본 or 검색조건
+    public List<BoardListDto> getBoardList(PostDao postDao, BoardListParamDto boardListParamDto) {
+        List<BoardListDto> boardList = postDao.getBoardListByParams(boardListParamDto);
+
+        for (BoardListDto post : boardList) {
             String categoryName = postDao.categoryById(post.getCategoryId());
             post.setCategoryName(categoryName);
         }
         return boardList;
     }
 
-    public int getMaxPage(int allPostCnt, int viewPostSize) {
-        int maxPage = 0;
+    private String buildUri(String reqUri, BoardListParamDto boardListParamDto) {
+        StringBuilder uri = new StringBuilder(reqUri);
+        List<String> queryParams = new ArrayList<>();
 
-        maxPage = allPostCnt / viewPostSize;
-        if (allPostCnt % viewPostSize != 0) {
-            maxPage++;
+        if (boardListParamDto.getStartDate() != null) {
+            queryParams.add("startDate=" + boardListParamDto.getStartDate());
         }
-        logger.info("maxPage = {}", maxPage);
-        return maxPage;
-    }
-
-    // Uri 에서 페이지 숫자 추출하기
-    public int getPageNum(HttpServletRequest req, int maxPage) {
-        int currentPageIdx = 1;
-        try {   // queryString Null
-            //TODO queryString 검토하기 (임시 수정)
-            String queryString = "page=" + req.getParameter("page");
-            logger.info("queryString = {}", queryString);
-            currentPageIdx = Integer.parseInt(queryString.split("=")[1]);
-            if (currentPageIdx < 1 || currentPageIdx > maxPage) {
-                throw new IllegalArgumentException();
-            }
-        } catch (NumberFormatException e) { // 숫자가 아닐때
-            logger.error(" @@@@ Invalid page number format", e);
-            currentPageIdx = 1;
-        } catch (NullPointerException e) {  // null 일때
-            logger.error(" @@@@ Query string is null", e);
-            currentPageIdx = 1;
-        } catch (IllegalArgumentException e) {  // 페이지 범위를 벗어날때
-            logger.error(" @@@@ currentPageIdx is out of range", e);
-            if (currentPageIdx < 1) {
-                currentPageIdx = 1;
-            } else if (currentPageIdx > maxPage) {
-                currentPageIdx = maxPage;
-            }
+        if (boardListParamDto.getEndDate() != null) {
+            queryParams.add("endDate=" + boardListParamDto.getEndDate());
         }
-        logger.info("currentPageIdx={}", currentPageIdx);
-        return currentPageIdx;
-    }
+        if(boardListParamDto.getCategoryId() != null) {
+            queryParams.add("category=" + boardListParamDto.getCategoryId());
+        }
+        if (boardListParamDto.getKeyword() != null) {
+            queryParams.add("keyword=" + boardListParamDto.getKeyword());
+        }
 
+        queryParams.add("page=");
+
+        if (!queryParams.isEmpty()) {
+            uri.append("?").append(String.join("&", queryParams));
+        }
+        logger.info("queryParams = {}" , queryParams);
+        return uri.toString();
+    }
 
 }

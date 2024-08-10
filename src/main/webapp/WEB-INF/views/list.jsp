@@ -74,26 +74,32 @@
 <body>
 <div class="container">
     <h2>자유 게시판 - 목록</h2>
-    <form class="search-box" action="/board/list" method="get">
+    <form class="search-box" action="/board/list" method="get" onsubmit="return filterEmptyFields(this);">
         <label>등록일</label>
         <div>
-            <input type="date" id="startDate" name="startDate" value="${param.startDate}"/> ~
-            <input type="date" id="endDate" name="endDate" value="${param.endDate}">
+            <input type="date" id="startDate" name="startDate" value="${searchParam.startDate}"/> ~
+            <input type="date" id="endDate" name="endDate" value="${searchParam.endDate}">
         </div>
         <div>
             <select id="category" name="category">
-                <option value="0" selected>전체 카테고리</option>
-                <c:forEach var="category" items="${allCategories}">
-                    <option value="${category.categoryId}">${category.categoryName}</option>
+                <option value="" ${empty searchParam.categoryId ? 'selected' : ''}>전체 카테고리</option>
+                <c:forEach var="category" items="${categoryList}">
+                    <option value="${category.categoryId}"
+                        ${category.categoryId == searchParam.categoryId ? 'selected' : ''}>
+                            ${category.categoryName}
+                    </option>
                 </c:forEach>
             </select>
-            <input type="text" id="keyword" name="keyword" value="${param.keyword}"
+            <input type="text" id="keyword" name="keyword" value="${searchParam.keyword}"
                    placeholder="검색어를 입력해 주세요. (제목 + 작성자 + 내용)"/>
             <button type="submit">검색</button>
         </div>
     </form>
+    <div class="msgBox">
+        <p>${errorMsg}</p>
+    </div>
     <div class="board-box">
-        <p>총 ${allPostCnt} 건</p>
+        <p>총 ${postCount} 건</p>
         <table>
             <colgroup>
                 <col style="width: 170px">
@@ -139,29 +145,29 @@
         </table>
         <div class="pageSection">
             <div class="next">
-                <button onclick="window.location.href='list?page=${ currentPageIdx-1}'"
-                ${currentPageIdx == 1 ? "disabled":"" } > ◀
+                <button onclick="window.location.href='${uriResult}${ currentPage-1}'"
+                ${currentPage == 1 ? "disabled":"" } > ◀
                 </button>
             </div>
             <ul class="pagination">
                 <c:choose>
-                    <c:when test="${maxPage == 0}">
+                    <c:when test="${totalPage == 0}">
                         <li><a class="page-num active" href="list?page=1">1</a></li>
                     </c:when>
                     <c:otherwise>
-                        <c:forEach var="i" begin="0" end="${maxPage - 1}">
-                            <c:set var="pageIdx" value="${i + 1}"/>
-                            <c:set var="activeCls" value="${currentPageIdx == pageIdx ? 'active' : ''}"/>
+                        <c:forEach var="i" begin="1" end="${totalPage}">
+                            <c:set var="pageIdx" value="${i}"/>
+                            <c:set var="activeCls" value="${currentPage == pageIdx ? 'active' : ''}"/>
                             <li><a class="page-num ${activeCls}"
-                                   href="list?page=${pageIdx}"> ${pageIdx}
+                                   href="${uriResult}${pageIdx}"> ${pageIdx}
                             </a></li>
                         </c:forEach>
                     </c:otherwise>
                 </c:choose>
             </ul>
             <div class="next">
-                <button onclick="window.location.href='list?page=${ currentPageIdx+1}'"
-                ${currentPageIdx == maxPage ? "disabled":"" } > ▶
+                <button onclick="window.location.href='${uriResult}${ currentPage+1}'"
+                ${currentPage == totalPage ? "disabled":"" } > ▶
                 </button>
             </div>
         </div>
@@ -169,42 +175,17 @@
 </div>
 </body>
 <script>
+    const filterEmptyFields =  (form) => {
+        const elements = form.elements;
 
-    // 검색된 조건 submit
-    document.querySelector(".search-box").addEventListener("submit", event => {
-        event.preventDefault();  // 기본 submit 효과 X
-
-        const form = event.target;
-        const params = new URLSearchParams();
-
-        // 요소 순회 및 값 추가
-        Array.from(form.elements).forEach(element => {
-            if (element.name && element.value) {
-                params.append(element.name, element.value);
+        Array.from(elements).forEach(element => {
+            console.log(element.name +" : ",element.value);
+            if (element.value === "") {
+                element.removeAttribute("name");
             }
         });
-
-        const queryStr = params.toString();
-        console.log('queryStr', queryStr);
-        let url = form.action +"?"+queryStr;
-        console.log('form.action', form.action);
-        console.log('url', url);
-        if (queryStr == '') {
-            url = "";
-        }
-
-        // 전송
-        fetch(url, {
-            method: form.method
-        })
-            .then(response => response.text())
-            .then(result => {
-                console.log('Success');
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-    });
+        return true;
+    }
 
 </script>
 </html>
