@@ -10,13 +10,12 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <html>
 <head>
-    <title>게시판 목록</title>
+    <title>게시판 - 목록</title>
     <style>
         .container {
             width: 1100px;
             margin: 0 auto;
         }
-
         .search-box {
             border: 1px solid #000;
             padding: 5px 10px;
@@ -68,6 +67,11 @@
 
         .addPostBtn{
             float: right;
+            text-decoration: none;
+            border: 1px solid black;
+            border-radius: 5px;
+            color: black;
+            padding: 10px 15px;
         }
 
     </style>
@@ -187,7 +191,7 @@
         </div>
     </div>
     <div>
-        <button class="addPostBtn" onclick="window.location.href='/board/register'">등록</button>
+        <a href="/board/register" class="addPostBtn">등록</a>
     </div>
 </div>
 </body>

@@ -14,6 +14,7 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.tags.shaded.org.apache.xalan.templates.ElemWhen;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -36,7 +37,7 @@ public class BoardController extends HttpServlet {
                     .build(Resources.getResourceAsStream(resource));
 
             commandMap.put("GET:/list", new ListService(sqlSessionFactory));
-            commandMap.put("GET:/register", new RegisterService());
+            commandMap.put("GET:/register", new RegisterService(sqlSessionFactory));
 
         } catch (IOException e) {
             logger.error("SqlSessionFactory Build  실패");
