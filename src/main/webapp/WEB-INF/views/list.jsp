@@ -1,4 +1,5 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%--
   Created by IntelliJ IDEA.
   User: lee93
@@ -43,10 +44,6 @@
             justify-content: center;
         }
 
-        .prev, .next {
-            margin: 0 10px; /* 화살표 아이콘 사이에 여백 추가 */
-        }
-
         .pagination {
             list-style: none;
             padding: 0;
@@ -67,6 +64,10 @@
 
         .pagination a.active {
             color: red;
+        }
+
+        .addPostBtn{
+            float: right;
         }
 
     </style>
@@ -133,18 +134,31 @@
                         <tr>
                             <td>${post.categoryName}</td>
                             <td>X</td> <!-- 파일 첨부가 없으므로 X로 처리 -->
-                            <td><a href="board/detail?idx=${post.postId}">${post.postTitle}</a></td>
+                            <c:choose>
+                                <c:when test="${fn:length(post.postTitle) > 80}">
+                                    <c:set var="shortTitle" value="${fn:substring(post.postTitle, 0, 80)}" />
+                                    <td><a href="board/detail?idx=${post.postId}">${post.postTitle}...</a></td>
+                                </c:when>
+                                <c:otherwise>
+                                    <td><a href="board/detail?idx=${post.postId}">${post.postTitle}</a></td>
+                                </c:otherwise>
+                            </c:choose>
                             <td>${post.postWriter}</td>
                             <td>${post.postHits}</td>
-                            <td>${post.uploadDatetime}</td>
-                            <td>${post.updateDatetime}</td>
+                            <td>${fn:replace(post.uploadDatetime, 'T', ' ')}</td>
+
+                            <c:set var="formattedUpdateDatetime"
+                                   value="${fn:replace(post.updateDatetime, '9999-12-31T23:59:59', '-')}" />
+                            <c:set var="finalUpdateDatetime"
+                                   value="${fn:replace(formattedUpdateDatetime, 'T', ' ')}" />
+                            <td>${finalUpdateDatetime}</td>
                         </tr>
                     </c:forEach>
                 </c:otherwise>
             </c:choose>
         </table>
         <div class="pageSection">
-            <div class="next">
+            <div class=".prev">
                 <button onclick="window.location.href='${uriResult}${ currentPage-1}'"
                 ${currentPage == 1 ? "disabled":"" } > ◀
                 </button>
@@ -172,9 +186,13 @@
             </div>
         </div>
     </div>
+    <div>
+        <button class="addPostBtn" onclick="window.location.href='/board/register'">등록</button>
+    </div>
 </div>
 </body>
 <script>
+
     const filterEmptyFields =  (form) => {
         const elements = form.elements;
 

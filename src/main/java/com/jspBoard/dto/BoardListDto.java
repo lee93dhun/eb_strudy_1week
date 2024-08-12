@@ -1,6 +1,7 @@
 package com.jspBoard.dto;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class BoardListDto {
     private int postId;
@@ -75,4 +76,5 @@ public class BoardListDto {
     public void setCategoryName(String categoryName) {
         this.categoryName = categoryName;
     }
+
 }

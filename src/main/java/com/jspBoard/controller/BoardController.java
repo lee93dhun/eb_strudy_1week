@@ -1,8 +1,8 @@
 package com.jspBoard.controller;
 
-import com.jspBoard.service.DetailService;
 import com.jspBoard.service.HttpService;
 import com.jspBoard.service.ListService;
+import com.jspBoard.service.RegisterService;
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -36,7 +36,7 @@ public class BoardController extends HttpServlet {
                     .build(Resources.getResourceAsStream(resource));
 
             commandMap.put("GET:/list", new ListService(sqlSessionFactory));
-            commandMap.put("GET:/detail", new DetailService());
+            commandMap.put("GET:/register", new RegisterService());
 
         } catch (IOException e) {
             logger.error("SqlSessionFactory Build  실패");

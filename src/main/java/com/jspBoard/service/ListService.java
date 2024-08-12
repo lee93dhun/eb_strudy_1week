@@ -94,6 +94,7 @@ public class ListService implements HttpService {
         String categoryIdStr = req.getParameter("category");
         Integer categoryId = getCategoryId(categoryIdStr);
 
+
         BoardListParamDto boardListParamDto = new BoardListParamDto();
         boardListParamDto.setStartDate(startDate);
         boardListParamDto.setEndDate(endDate);
